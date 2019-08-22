@@ -11,11 +11,14 @@ import java.util.List;
  */
 public class WordNode {
 
-    private int value; // 节点名称
+    // 节点名称
+    private int value;
 
-    private List<WordNode> subNodes; // 子节点
+    // 子节点
+    private List<WordNode> subNodes;
 
-    private boolean isLast;// 默认false
+    // 默认false
+    private boolean isLast;
 
     public WordNode(int value) {
         this.value = value;

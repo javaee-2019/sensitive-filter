@@ -8,43 +8,65 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 /**
- * 创建时间：2016年8月30日 下午3:01:12
- * <p>
+ *
  * 思路： 创建一个FilterSet，枚举了0~65535的所有char是否是某个敏感词开头的状态
- * <p>
+ *
  * 判断是否是 敏感词开头 | | 是 不是 获取头节点 OK--下一个字 然后逐级遍历，DFA算法
  *
- * @author andy
- * @version 2.2
+ * @author hewen
+ * @date 2019/8/22 11:25
  */
 public class WordFilter {
 
-    private static final FilterSet set = new FilterSet(); // 存储首字
-    private static final Map<Integer, WordNode> nodes = new HashMap<Integer, WordNode>(1024, 1); // 存储节点
-    private static final Set<Integer> stopwdSet = new HashSet<>(); // 停顿词
-    private static final char SIGN = '*'; // 敏感词过滤替换
+    // 存储首字
+    private static final FilterSet set = new FilterSet();
+    // 存储节点
+    private static final Map<Integer, WordNode> nodes = new HashMap<Integer, WordNode>(1024, 1);
+    // 停顿词
+    private static final Set<Integer> stopwdSet = new HashSet<>();
+    // 敏感词过滤替换
+    private static final char SIGN = '*';
 
-    static {
-        try {
-            init();
-        } catch (Exception e) {
-            // 加载失败
-        }
+    /**
+     * 初始化 默认 敏感词+ 停顿词
+     */
+    public WordFilter() {
+        init();
     }
 
-    private static void init() {
+    /**
+     * 初始化 敏感词+ 停顿词
+     * @param sensitiveWord 敏感词
+     * @param stopWord 停顿词
+     */
+    public WordFilter(List<String> sensitiveWord,List<String> stopWord) {
+        this();
+        addSensitiveWord(sensitiveWord);
+        addStopWord(stopWord);
+    }
+
+    /**
+     * 初始化 敏感词
+     * @param sensitiveWord 敏感词
+     */
+    public WordFilter(List<String> sensitiveWord) {
+        this();
+        addSensitiveWord(sensitiveWord);
+    }
+
+    private void init() {
         // 获取敏感词
         addSensitiveWord(readWordFromFile("wd.txt"));
         addStopWord(readWordFromFile("stopwd.txt"));
     }
 
     /**
-     * 增加敏感词
+     * 增加默认敏感词
      *
      * @param path
      * @return
      */
-    private static List<String> readWordFromFile(String path) {
+    private List<String> readWordFromFile(String path) {
         List<String> words;
         BufferedReader br = null;
         try {
@@ -70,11 +92,11 @@ public class WordFilter {
     }
 
     /**
-     * 增加停顿词
+     * 增加 停顿词
      *
      * @param words
      */
-    private static void addStopWord(final List<String> words) {
+    public void addStopWord(final List<String> words) {
         if (!isEmpty(words)) {
             char[] chs;
             for (String curr : words) {
@@ -91,7 +113,7 @@ public class WordFilter {
      *
      * @param words
      */
-    private static void addSensitiveWord(final List<String> words) {
+    public void addSensitiveWord(final List<String> words) {
         if (!isEmpty(words)) {
             char[] chs;
             int fchar;
@@ -124,7 +146,7 @@ public class WordFilter {
      * @param src
      * @return
      */
-    public static final String doFilter(final String src) {
+    public  final String doFilter(final String src) {
         if (set != null && nodes != null) {
             char[] chs = src.toCharArray();
             int length = chs.length;
@@ -157,11 +179,13 @@ public class WordFilter {
                     if (stopwdSet != null && stopwdSet.contains(temp))
                         continue;
                     node = node.querySub(temp);
-                    if (node == null)// 没有了
+                    // 没有了
+                    if (node == null)
                         break;
                     if (node.isLast()) {
                         couldMark = true;
-                        markNum = k - i;// 3-2
+                        // 3-2
+                        markNum = k - i;
                     }
                     cpcurrc = temp;
                 }
@@ -181,15 +205,16 @@ public class WordFilter {
     /**
      * 是否包含敏感词
      *
-     * @param src
-     * @return
+     * @param src 待过滤的目标值
      */
-    public static final boolean isContains(final String src) {
+    public final boolean isContains(final String src) {
         if (set != null && nodes != null) {
             char[] chs = src.toCharArray();
             int length = chs.length;
-            int currc; // 当前检查的字符
-            int cpcurrc; // 当前检查字符的备份
+            // 当前检查的字符
+            int currc;
+            // 当前检查字符的备份
+            int cpcurrc;
             int k;
             WordNode node;
             for (int i = 0; i < length; i++) {
@@ -197,11 +222,12 @@ public class WordFilter {
                 if (!set.contains(currc)) {
                     continue;
                 }
-                node = nodes.get(currc);// 日 2
-                if (node == null)// 其实不会发生，习惯性写上了
+                node = nodes.get(currc);
+                if (node == null)
                     continue;
                 boolean couldMark = false;
-                if (node.isLast()) {// 单字匹配（日）
+                // 单字匹配（日）
+                if (node.isLast()) {
                     couldMark = true;
                 }
                 // 继续匹配（日你/日你妹），以长的优先
@@ -215,7 +241,8 @@ public class WordFilter {
                     if (stopwdSet != null && stopwdSet.contains(temp))
                         continue;
                     node = node.querySub(temp);
-                    if (node == null)// 没有了
+                    // 没有了
+                    if (node == null)
                         break;
                     if (node.isLast()) {
                         couldMark = true;
@@ -237,7 +264,7 @@ public class WordFilter {
      * @param src
      * @return
      */
-    private static int charConvert(char src) {
+    private int charConvert(char src) {
         int r = BCConvert.qj2bj(src);
         return (r >= 'A' && r <= 'Z') ? r + 32 : r;
     }
@@ -245,10 +272,8 @@ public class WordFilter {
     /**
      * 判断一个集合是否为空
      *
-     * @param col
-     * @return
      */
-    public static <T> boolean isEmpty(final Collection<T> col) {
+    public <T> boolean isEmpty(final Collection<T> col) {
         if (col == null || col.isEmpty()) {
             return true;
         }
